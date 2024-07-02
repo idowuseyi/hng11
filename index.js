@@ -1,13 +1,13 @@
-const https = require('https');
+const axios = require('axios');
 const http = require('http');
 const url = require('url');
 const querystring = require('querystring');
+const PORT = process.env.PORT || 3000
 require("dotenv").config();
+
 
 // API key for OpenWatherMap
 const apiWeatherKey = process.env.apiWeatherKey;
-const apiLocationKey = process.env.apiLocationKey;
-
 
 // Create a server object
 const server = http.createServer(async (req, res) => {
@@ -20,40 +20,43 @@ const server = http.createServer(async (req, res) => {
     const visitorName = query.visitor_name || "Guest";
 
     // Get the cleint's IP address
-    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    let clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    console.log(clientIp);
     
-    // Fetch location data from api.ipstack.com
-    const locationUrl = "http://api.ipstack.com/" + clientIp + "?access_key=" + apiLocationKey;
-    const options = {method: "GET",};
+    try {
+        // Fetch location data using ip and use location to fetch temp data
+        const getCity = await axios.get(`http://ip-api.com/json/102.88.71.33?fields=61439`);
 
-    const locationRes = await fetch(locationUrl, options);
-    const result = await locationRes.json();
-    const latitude = await result.latitude;
-    const longitude = await result.longitude;
-    const location = {city: result.city, country: result.country_name, continent: result.continent_name};
+        const city = getCity.data.city;
+
+        const weatherUrl = await axios.get(`http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiWeatherKey}&units=metric`);
+
+        // construct the greeting message
+        let greeting = `Hello, ${visitorName}!, the temperature is ${weatherUrl.data.main.temp} degrees Celcius`;
+        if (city) {
+            greeting += ` in ${city}`;
+        }
     
-    // Fetch temperature data from OpenWeatherMap
-    const temperatureResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiWeatherKey}`);
-    const temperatureData = await temperatureResponse.json();
-    const temperature = temperatureData.main.temp;
-   
+        // construct the response object
+        const response = {
+            client_ip: clientIp,
+            location: city || 'Unknown',
+            greeting: greeting
+        };
 
-    // construct the greeting message
-    const greeting = `Hello, ${visitorName}!, the temperature is ${temperature} degrees Celcius in ${location.city}`;
-   
-    // construct the response object
-    const response = {
-        client_ip: clientIp,
-        location,
-        greeting
-    };
+        // Set the response header and send the response
+        res.writeHead(200, {'content-Type': 'application/json'});
+        res.end(JSON.stringify(response));
 
-    // Set the response header and send the response
-    res.writeHead(200, {'content-Type': 'application/json'});
-    res.end(JSON.stringify(response));
+    } catch (error) {
+        console.log('Error fetching data:', error);
+        res.writeHead(500, {'content-Type': 'application/json'});
+        res.end(JSON.stringify({ error: 'Failed to fetch required data'}));
+    }
+
 });
 
 // start the server
-server.listen(3000, () => {
-    console.log('server started and listening on port 3000');
+server.listen(PORT, () => {
+    console.log(`server started and running on http://localhost:${PORT}`);
 });
