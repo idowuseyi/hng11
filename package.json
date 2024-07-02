@@ -1,8 +1,17 @@
 {
+  "name": "hng1-greet-server",
+  "version": "1.0.0",
+  "author": "Oluwaseyi Idowu",
+  "description": "",
+  "main": "index.js",
+  "engines": {
+    "node": "20.x"
+  },
   "dependencies": {
     "dotenv": "^16.4.5"
   },
   "scripts": {
-    "build": "node app.js"
+    "build": "node index.js",
+    "start": "node index.js"
    }
 }
