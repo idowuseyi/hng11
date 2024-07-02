@@ -17,11 +17,10 @@ const server = http.createServer(async (req, res) => {
     const query = querystring.parse(parsedUrl.query);
 
     // Get the visitor's name from the query string
-    const visitorName = query.visitor_name;
+    const visitorName = query.visitor_name || "Guest";
 
     // Get the cleint's IP address
-    const clientIp = req.socket.remoteAddress;
-    const clientIp2 = '127.0.0.1'
+    const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     
     // Fetch location data from api.ipstack.com
     const locationUrl = "http://api.ipstack.com/" + clientIp + "?access_key=" + apiLocationKey;
