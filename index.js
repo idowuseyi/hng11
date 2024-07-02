@@ -18,10 +18,9 @@ const server = http.createServer(async (req, res) => {
 
     // Get the visitor's name from the query string
     const visitorName = query.visitor_name || "Guest";
-
+    
     // Get the cleint's IP address
     let clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    console.log(clientIp);
     
     try {
         // Fetch location data using ip and use location to fetch temp data
